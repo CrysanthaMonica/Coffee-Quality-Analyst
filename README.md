@@ -4,9 +4,9 @@
 This project analyzes an Arabica coffee dataset to identify factors affecting its quality. The analysis focuses on Ethiopia's coffee and examines variables influencing the aftertaste.
 
 ## Dataset
-• *Source*: Kaggle
-• *Attributes*: 44
-• *Rows*: 1311
+- *Source*: Kaggle
+- *Attributes*: 44
+- *Rows*: 1311
 
 ## Objectives
 1. Assess the data quality and structure.
