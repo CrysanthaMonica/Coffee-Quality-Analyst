@@ -1,0 +1,526 @@
+---
+title: "AOL Data Mining"
+output: pdf_document
+date: "2023-06-15"
+---
+
+## Loading dataset
+```{r}
+data <- read.csv("merged_data_cleaned.csv")
+```
+
+
+```{r}
+library(tidyverse)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(corrplot)
+attach(data)
+```
+
+
+## Data Exploration
+```{r}
+head(data)
+```
+
+```{r}
+print(ncol(data))
+print(nrow(data))
+print(names(data))
+```
+```{r}
+str(data)
+```
+
+```{r}
+summary(data)
+```
+
+```{r}
+unique(Country.of.Origin)
+```
+
+```{r}
+unique(Quakers)
+```
+
+```{r}
+colSums(is.na(data))
+```
+## Replacing missing values
+
+```{r}
+data$altitude_low_meters[is.na(data$altitude_low_meter)] <- mean(data$altitude_low_meter, na.rm = TRUE)
+data$altitude_high_meters[is.na(data$altitude_high_meters)] <- mean(data$altitude_high_meters, na.rm = TRUE)
+data$altitude_mean_meters[is.na(data$altitude_mean_meters)] <- mean(data$altitude_mean_meters, na.rm = TRUE)
+data$Quakers[is.na(data$Quakers)]<-round(mean(data$Quakers, na.rm = TRUE))
+```
+
+
+```{r}
+sum(is.na(data))
+```
+
+```{r}
+country <- table(Country.of.Origin)%>%                
+  as.data.frame() %>% 
+  arrange(desc(Freq))
+```
+
+```{r}
+country
+```
+
+```{r}
+countries<-table(Country.of.Origin)
+countries<-sort(countries,decreasing=TRUE)
+```
+
+
+```{r}
+barplot(head(countries,10),ylim=c(0,300),
+main = "Top 10 Arabica Producers",
+xlab = "Countries",
+ylab = "Freq",
+col = "lightblue", las = 2, cex.names = 0.8
+) + grid()
+```
+
+## Creating 'var' dataframe using 'Variety' column in 'data' dataset
+
+```{r}
+var <- table(Variety)%>%                
+  as.data.frame() %>% 
+  arrange(desc(Freq))
+var
+```
+
+## Dropping unnamed variety from dataframe
+
+```{r}
+var<- var[-4,]
+var
+```
+
+## Creating 'method' dataframe using 'Processing.Method' column in 'data' dataset
+
+```{r}
+method <- table(Processing.Method)%>% as.data.frame() %>% arrange(desc(Freq))
+method
+```
+
+## Dropping unnamed method from dataframe
+
+```{r}
+method<-method[-3,]
+method
+```
+
+## Creating 'color' dataframe using 'Color' column in 'data' dataset
+
+```{r}
+color <- table(Color)%>% as.data.frame() %>% arrange(desc(Freq))
+color
+```
+
+## Dropping unfilled color type
+
+```{r}
+color<-color[-2,]
+color
+```
+
+## Visualizing distributions of Country of Origin, Variety, Processing Methods, Color
+
+```{r}
+par(mfrow=c(2,2))
+ggplot(head(country,10), aes(x= reorder(Country.of.Origin, Freq), y=Freq, fill = Country.of.Origin)) + geom_bar(stat = "identity") + coord_flip() + labs(title = "Top 10 Arabica Producers",
+       x = "Countries",
+       y = "Countries")  + scale_fill_hue(c=80)
+
+ggplot(head(var,10), aes(x=reorder(Variety,-Freq),y=Freq, fill= "")) + geom_bar(stat = "identity") + 
+  labs(Title="Top 10 Varieties", x="Variety",y="Freq") + scale_x_discrete(guide = guide_axis(angle = 90)) + scale_fill_manual(values=c("lightblue"))
+
+ggplot(method, aes(x=reorder(Processing.Method,-Freq),y=Freq, fill= "")) + geom_bar(stat = "identity") + 
+  labs(Title="Processing Methods", x="Method",y="Freq") + scale_x_discrete(guide = guide_axis(n.dodge = 2)) + scale_fill_manual(values=c("bisque4"))
+
+ggplot(color, aes(x=reorder(Color,-Freq),y=Freq, fill= "")) + geom_bar(stat = "identity") + 
+  labs(Title="Processing Methods", x="Method",y="Freq")  + scale_fill_manual(values=c("aquamarine3"))
+
+
+```
+
+
+## Checking data distribution of Total Cup Points
+
+```{r}
+# getting samples
+set.seed(1234)
+dplyr::sample_n(data, 10)
+shapiro.test(data$Total.Cup.Points)
+
+# p value < 0.05 -> data is not normally distributed
+```
+
+```{r}
+library("car")
+par(mfrow = c(1,2))
+hist(Total.Cup.Points)
+qqPlot(Total.Cup.Points)
+```
+
+
+## Finding outliers
+
+```{r}
+library(gridExtra)
+boxplot(Total.Cup.Points, main = "Total Cup Points")
+```
+
+## Replacing outlier with mean
+
+```{r}
+Total.Cup.Points <- replace(Total.Cup.Points, Total.Cup.Points == 0, mean(Total.Cup.Points)) 
+```
+
+## Finding country with highest total cup points
+
+```{r}
+by_country <- arabica %>% group_by(Country.of.Origin)
+by_country %>% filter(Total.Cup.Points == max(Total.Cup.Points))
+```
+
+```{r}
+print(arrange(by_country, -Total.Cup.Points))
+```
+
+
+## Finding countries with highest measure quality values
+
+```{r}
+# selecting quality measures variables
+arabica <- select(data, Country.of.Origin, 21:34, Category.Two.Defects)
+arabica
+```
+
+
+```{r}
+aroma<-by_country %>% filter(Aroma == max(Aroma))
+aro<-arrange(aroma,-Aroma)
+print(head(select(aro,Country.of.Origin,Aroma)),5)
+
+flavor<-by_country %>% filter(Flavor == max(Flavor))
+flv<-arrange(flavor,-Flavor)
+print(head(select(flv,Country.of.Origin,Flavor)),5)
+
+aftertaste<-by_country %>% filter(Aftertaste == max(Aftertaste))
+aft<-arrange(aftertaste,-Aftertaste)
+print(head(select(aft,Country.of.Origin,Aftertaste)),5)
+
+acidity<-by_country %>% filter(Acidity == max(Acidity))
+aci<-arrange(acidity,-Acidity)
+print(head(select(aci,Country.of.Origin,Acidity)),5)
+
+body<-by_country %>% filter(Body == max(Body))
+bod<-arrange(body,-Body)
+print(head(select(bod,Country.of.Origin,Body)),5)
+
+balance<-by_country %>% filter(Balance == max(Balance))
+bal<-arrange(balance,-Balance)
+print(head(select(bal,Country.of.Origin,Balance)),5)
+
+```
+
+```{r}
+uniformity<-by_country %>% filter(Uniformity == max(Uniformity))
+uni<-arrange(uniformity,-Uniformity)
+print(head(select(uni,Country.of.Origin,Uniformity)),5)
+
+clean<-by_country %>% filter(Clean.Cup == max(Clean.Cup))
+cl<-arrange(clean,-Clean.Cup)
+print(head(select(cl,Country.of.Origin,Clean.Cup)),5)
+
+sweet<-by_country %>% filter(Sweetness == max(Sweetness))
+swt<-arrange(sweet,-Sweetness)
+print(head(select(swt,Country.of.Origin,Sweetness)),5)
+
+moisture<-by_country %>% filter(Moisture == max(Moisture))
+mois<-arrange(moisture,-Moisture)
+print(head(select(mois,Country.of.Origin,Moisture)),5)
+
+defect1<-by_country %>% filter(Category.One.Defects == max(Category.One.Defects))
+def1<-arrange(defect1,-Category.One.Defects)
+print(head(select(def1,Country.of.Origin,Category.One.Defects)),5)
+
+defect2<-by_country %>% filter(Category.Two.Defects == max(Category.Two.Defects))
+def2<-arrange(defect2,-Category.Two.Defects)
+print(head(select(def2,Country.of.Origin,Category.Two.Defects)),5)
+```
+
+
+```{r}
+# selecting only ethiopia from data
+ethiopia_arabica <- arabica %>% 
+  filter(Country.of.Origin == "Ethiopia")
+# sorting in descending order
+ethiopia_arabica %>% arrange(desc(Total.Cup.Points))
+```
+
+
+```{r}
+# Removing unused columns
+ethiopia_arabica$Country.of.Origin <- NULL
+```
+
+```{r}
+df_correlation <- as.data.frame(round(cor(ethiopia_arabica %>% dplyr::select(everything())), 3))
+library(corrplot)
+corr_graph <- cor(ethiopia_arabica)
+corrplot(corr_graph)
+```
+
+```{r}
+par(mfrow = c(2,3))
+ggplot(ethiopia_arabica, aes(Total.Cup.Points, Aroma)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Aroma")
+ggplot(ethiopia_arabica, aes(Total.Cup.Points, Flavor)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Flavor")
+ggplot(ethiopia_arabica, aes(Total.Cup.Points, Aftertaste)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Aftertaste")
+ggplot(ethiopia_arabica, aes(Total.Cup.Points, Acidity)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Acidity")
+ggplot(ethiopia_arabica, aes(Total.Cup.Points, Body)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Body")
+ggplot(ethiopia_arabica, aes(Total.Cup.Points, Balance)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Balance")
+```
+
+
+## Finding ethiopia's smallest valued variable among top 6 correlated with total cup points
+
+```{r}
+summary(ethiopia_arabica[1:6])
+```
+```{r}
+eth_aroma<-round(mean(ethiopia_arabica$Aroma),3)
+eth_flv<-round(mean(ethiopia_arabica$Flavor),3)
+eth_aft<-round(mean(ethiopia_arabica$Aftertaste),3)
+eth_aci<-round(mean(ethiopia_arabica$Acidity),3)
+eth_bal<-round(mean(ethiopia_arabica$Balance),3)
+eth_bod<-round(mean(ethiopia_arabica$Body),3)
+```
+
+
+```{r}
+eth_df<-data.frame(
+  Measures=c("Aroma","Flavor","Aftertaste","Acidity","Balance","Body"),
+  Value=c(eth_aroma,eth_flv,eth_aft,eth_aci,eth_bal,eth_bod))
+eth_df
+```
+
+
+```{r}
+ggplot(eth_df, aes(x=reorder(Measures,-Value),y=Value, fill = Measures)) + geom_bar(stat = "identity") + 
+  labs(Title="Ethiopia Arabica Quality Measures", x="Measures",y="Value") + coord_cartesian(ylim=c(7.8,8.1)) + scale_fill_manual(values = c("saddlebrown", "tan", "saddlebrown", "saddlebrown", "saddlebrown", "saddlebrown"))
+```
+
+## Looking for variables that affect 'aftertaste'
+
+```{r}
+arabica2<-select(data,Harvest.Year,Variety:Category.Two.Defects,42:44)
+ethiopia_arabica2 <- arabica2 %>% 
+  filter(Country.of.Origin == "Ethiopia")
+```
+
+```{r}
+ethiopia_arabica2
+```
+
+
+## Printing amount of unavailable data out of 44
+
+```{r}
+print(sum(ethiopia_arabica2$Harvest.Year == ""))
+print(sum(ethiopia_arabica2$Variety == ""))
+print(sum(ethiopia_arabica2$Processing.Method == ""))
+print(sum(ethiopia_arabica2$Color == ""))
+```
+## Dropping unusable columns
+
+```{r}
+ethiopia_arabica2$Variety <- NULL
+ethiopia_arabica2$Processing.Method <- NULL
+ethiopia_arabica2$Color <- NULL
+```
+
+## Transforming chr data to int
+
+```{r}
+table(ethiopia_arabica2$Harvest.Year)
+```
+```{r}
+# Removing vague data
+ethiopia_arabica2<-subset(ethiopia_arabica2, Harvest.Year!="")
+ethiopia_arabica2<-subset(ethiopia_arabica2, Harvest.Year!="August to December")
+```
+
+
+```{r}
+ethiopia_arabica2<-transform(ethiopia_arabica2, Harvest.Year = as.integer(as.character(
+       factor(Harvest.Year, 
+         levels = c("2009/2010", "2010", "2012","2013","2014","2015","2016","2017","March 2010"),
+         labels = c(1, 2, 3, 4, 5, 6, 7, 8, 2)
+       )
+ )))
+```
+
+
+## Plotting correlation with aftertaste
+
+```{r}
+coor_eth<-round(cor(ethiopia_arabica2),3)
+coor_eth
+```
+
+```{r}
+coreth <- as.data.frame(round(cor(ethiopia_arabica2 %>% dplyr::select(everything())), 3))
+corr_graph <- cor(ethiopia_arabica2)
+corrplot(corr_graph)
+```
+```{r}
+eth_temp<-select(ethiopia_arabica2,Aroma:Uniformity,Sweetness,Cupper.Points,Quakers,Category.One.Defects,Category.Two.Defects,altitude_high_meters,altitude_low_meters,altitude_mean_meters)
+eth_temp
+```
+
+```{r}
+coreth_temp <- as.data.frame(round(cor(eth_temp %>% dplyr::select(everything())), 3))
+corr_graph <- cor(eth_temp)
+corrplot(corr_graph)
+```
+
+```{r}
+par(mfrow = c(2,7))
+ggplot(eth_temp, aes(Aftertaste, Aroma)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Aroma")
+ggplot(eth_temp, aes(Aftertaste, Flavor)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Flavor")
+ggplot(eth_temp, aes(Aftertaste, Acidity)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Acidity")
+ggplot(eth_temp, aes(Aftertaste, Body)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Body")
+ggplot(eth_temp, aes(Aftertaste, Balance)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Balance")
+ggplot(eth_temp, aes(Aftertaste, Uniformity)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Uniformity")
+ggplot(eth_temp, aes(Aftertaste, Sweetness)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Sweetness")
+ggplot(eth_temp, aes(Aftertaste, Cupper.Points)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Cupper.Points")
+ggplot(eth_temp, aes(Aftertaste, Quakers)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Quakers")
+ggplot(eth_temp, aes(Aftertaste, Category.One.Defects)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Category.One.Defects")
+ggplot(eth_temp, aes(Aftertaste, Category.Two.Defects)) + geom_point() + geom_smooth(method="lm") + labs(title="vs Category.Two.Defects")
+ggplot(eth_temp, aes(Aftertaste, altitude_high_meters)) + geom_point() + geom_smooth(method="lm") + labs(title="vs altitude_high_meters")
+ggplot(eth_temp, aes(Aftertaste, altitude_low_meters)) + geom_point() + geom_smooth(method="lm") + labs(title="vs altitude_low_meters")
+ggplot(eth_temp, aes(Aftertaste, altitude_mean_meters)) + geom_point() + geom_smooth(method="lm") + labs(title="vs altitude_mean_meters")
+
+```
+
+
+## Removing irrelevant variables
+
+```{r}
+ethiopia_arabica2$Harvest.Year <- NULL
+ethiopia_arabica2$Category.One.Defects <- NULL
+ethiopia_arabica2$Quakers <- NULL
+ethiopia_arabica2$Category.Two.Defects <- NULL
+```
+
+
+```{r}
+ethiopia_arabica2$Cupper.Points <- NULL
+ethiopia_arabica2$Total.Cup.Points <- NULL
+```
+
+
+## Predictive Modelling
+
+```{r}
+# splitting data into train and test data
+set.seed(123)
+samp <- sample(nrow(ethiopia_arabica2), 0.8 * nrow(ethiopia_arabica2))
+train <- ethiopia_arabica2[samp, ]
+test <- ethiopia_arabica2[-samp, ]
+```
+
+```{r}
+print(dim(test))
+print(dim(train))
+```
+```{r}
+print(test)
+print(train)
+```
+
+## Random Forest Model
+
+```{r}
+library(randomForest)
+model <- randomForest(Aftertaste ~ . , data = train, mtree=1000, mtry=5)
+model
+```
+
+```{r}
+# number of trees that produce lowest test MSE
+print(which.min(model$mse))
+# find RMSE of best model
+print(sqrt(model$mse[which.min(model$mse)]))
+```
+```{r}
+# test MSE by number of trees
+plot(model)
+```
+
+```{r}
+# Variable importance plot
+varImpPlot(model)
+```
+
+
+```{r}
+# Model prediction results
+prediction <- predict(model, newdata = test)
+table(prediction,test$Aftertaste)
+results<-cbind(prediction,test$Aftertaste)
+colnames(results)<-c('pred','real')
+results<-as.data.frame(results)
+
+results
+```
+```{r}
+library(Metrics)
+mae(results$pred,results$real)
+rmse(results$pred,results$real)
+mse(results$pred,results$real)
+
+actual <- results$real
+predicted <- results$pred
+
+ss_total <- sum((actual - mean(actual))^2)  # Total sum of squares
+ss_residual <- sum((actual - predicted)^2)   # Residual sum of squares
+
+r2_manual <- 1 - (ss_residual / ss_total)
+print(r2_manual)
+
+```
+
+```{r}
+# Calculating RMSE
+sqrt(mean((results$real - results$pred)^2))
+```
+
+## Multi Linear Regression
+
+```{r}
+lm_model<-lm(Aftertaste~Balance + Flavor + Acidity + Body + Aroma + altitude_mean_meters + altitude_low_meters + altitude_high_meters + Moisture + Uniformity + Sweetness + Clean.Cup, data=ethiopia_arabica2)
+summary(lm_model)
+```
+```{r}
+pred_lm<-predict(lm_model,newdata=test)
+table(pred_lm,test$Aftertaste)
+results_lm<-cbind(pred_lm,test$Aftertaste)
+colnames(results_lm)<-c('pred','real')
+results_lm<-as.data.frame(results_lm)
+
+results_lm
+```
+```{r}
+sqrt(mean((results_lm$real - results_lm$pred)^2))
+```
