@@ -1,4 +1,4 @@
-
+# COFFEE QUALITY MEASURES PREDICTION
 
 ## Overview
 This project analyzes an Arabica coffee dataset to identify factors affecting its quality. The analysis focuses on Ethiopia's coffee and examines variables influencing the aftertaste.
@@ -17,38 +17,29 @@ This project analyzes an Arabica coffee dataset to identify factors affecting it
 ## Analysis Workflow
 
 ### Data Exploration
-• Loaded and explored the data using R.
-• Visualized distributions of key variables such as Country of Origin and Variety.
+- Loaded and explored the data using R.
+- Visualized distributions of key variables such as Country of Origin and Variety.
 
 ### Data Cleaning
-• Handled missing values using mean imputation.
-• Removed unnamed or irrelevant categories.
+- Handled missing values using mean imputation.
+- Removed unnamed or irrelevant categories.
 
 ### Visualizations
-• Barplots for Arabica producers and quality measures.
-• Correlation plots for Ethiopian coffee attributes.
+- Barplots for Arabica producers and quality measures.
+- Correlation plots for Ethiopian coffee attributes.
 
 ### Model Development
-• *Model Used*: Multi Linear Regression
-• *Target Variable*: Aftertaste
-• *Significant Predictors*: Acidity, Balance, Flavor
+- *Model Used*: Multi Linear Regression
+- *Target Variable*: Aftertaste
+- *Significant Predictors*: Acidity, Balance, Flavor
 
 ## Findings
-• Ethiopia's coffee excels in acidity but is lower in aftertaste.
-• Balance, flavor, and acidity positively affect aftertaste.
-• Sweetness negatively impacts aftertaste.
+- Ethiopia's coffee excels in acidity but is lower in aftertaste.
+- Balance, flavor, and acidity positively affect aftertaste.
+- Sweetness negatively impacts aftertaste.
 
 ## Conclusion
 The analysis provides insights into improving coffee quality by focusing on specific attributes.
 
-## Poster
-![Coffee Quality Measures Prediction](poster_image_path)
-
 ## References
 • [Kaggle Dataset](https://www.kaggle.com/datasets/volpatto/coffee-quality-database-from-cqi)
-
-## How to Run
-1. Clone the repo.
-2. Ensure R and necessary libraries are installed.
-3. Execute the R script to reproduce the analysis.
-4.
