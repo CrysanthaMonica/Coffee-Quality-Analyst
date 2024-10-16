@@ -11,9 +11,7 @@ This project aims to analyze the quality of Arabica coffee beans, with a focus o
 - [Modeling](#modeling)
 - [Results and Findings](#results-and-findings)
 - [Further Improvements](#further-improvements)
-- [How to Run](#how-to-run)
-- [References](#references)
-
+  
 ## Project Motivation
 The quality of coffee beans is influenced by various factors such as acidity, flavor, balance, and sweetness. This project attempts to predict how these attributes influence a coffee's **aftertaste**, particularly in Arabica coffee from Ethiopia. The results can help coffee producers and consumers alike in understanding what makes a good coffee aftertaste and how to improve the quality of coffee beans.
 
